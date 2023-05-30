@@ -37,15 +37,15 @@ public class Fraction {
       return numerator;
    }
 
-   public static void main (String args[]) {
+   public static void main (String args[], int num, int den) {
       try {
          // create a new instance
          // Fraction *frac = [[Fraction alloc] init];
          Fraction frac = new Fraction();
 
          // set the values
-         frac.setNumerator(1);
-         frac.setDenominator(3);
+         frac.setNumerator(num);
+         frac.setDenominator(den);
 
          // print it
          System.out.print("The fraction is: ");
