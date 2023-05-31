@@ -25,7 +25,9 @@ import java.util.Random;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.nio.charset.Charset;
-
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONException;
 
 
 class WebServer {
@@ -229,6 +231,7 @@ class WebServer {
                 Map<String, String> query_pairs = new LinkedHashMap<String, String>();
                 query_pairs = splitQuery(request.replace("github?", ""));
                 String apiUrl = "https://api.github.com/" + query_pairs.get("query");
+                String responseLine = "";
 
                 try {
                     // Fetch data from the GitHub API
@@ -246,23 +249,18 @@ class WebServer {
                         int repoId = repoObject.getInt("id");
                         String ownerLogin = repoObject.getJSONObject("owner").getString("login");
 
-                        // Append the extracted data to the response
-                        response.append("Full Name: ").append(fullName).append("<br>");
-                        response.append("Repo ID: ").append(repoId).append("<br>");
-                        response.append("Owner Login: ").append(ownerLogin).append("<br><br>");
+
+                        // Append the extracted data to the responseLine
+                        responseLine= "Full Name: " + fullName + "<br>"
+                                + "Repo ID: " + repoId + "<br>"
+                                + "Owner Login: " + ownerLogin + "<br><br>";
                     }
 
                     // Generate the response
                     builder.append("HTTP/1.1 200 OK\n");
                     builder.append("Content-Type: text/html; charset=utf-8\n");
                     builder.append("\n");
-                    builder.append(response.toString());
-                } catch (IOException e) {
-                    // Handle IO errors when fetching data
-                    builder.append("HTTP/1.1 500 Internal Server Error\n");
-                    builder.append("Content-Type: text/html; charset=utf-8\n");
-                    builder.append("\n");
-                    builder.append("Error fetching data from GitHub API.");
+                    builder.append(responseLine);
                 } catch (JSONException e) {
                     // Handle errors when parsing JSON
                     builder.append("HTTP/1.1 500 Internal Server Error\n");
@@ -334,12 +332,8 @@ class WebServer {
      catch(IOException ex){
             throw new RuntimeException(ex);
         }
-     catch (IOException e) {
-      e.printStackTrace();
-      response = ("<html>ERROR: " + e.getMessage() + "</html>").getBytes();
-    }
 
-    return response;
+      return response;
   }
 
   /**
