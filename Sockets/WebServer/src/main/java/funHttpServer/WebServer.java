@@ -28,7 +28,7 @@ import java.nio.charset.Charset;
 
 class WebServer {
   public static void main(String args[]) {
-    WebServer server = new WebServer(8080);
+    WebServer server = new WebServer(9000);
   }
 
   /**
@@ -194,50 +194,130 @@ class WebServer {
             builder.append("File not found: " + file);
           }
         } else if (request.contains("multiply?")) {
-          // This multiplies two numbers, there is NO error handling, so when
-          // wrong data is given this just crashes
+          // This multiplies two numbers with error handling for parsing integers
 
           Map<String, String> query_pairs = new LinkedHashMap<String, String>();
           // extract path parameters
           query_pairs = splitQuery(request.replace("multiply?", ""));
 
           // extract required fields from parameters
-          Integer num1 = Integer.parseInt(query_pairs.get("num1"));
-          Integer num2 = Integer.parseInt(query_pairs.get("num2"));
+          Integer num1 = 1;
+          Integer num2 = 1;
 
-          // do math
-          Integer result = num1 * num2;
+          try {
+              num1 = Integer.parseInt(query_pairs.get("num1"));
+              num2 = Integer.parseInt(query_pairs.get("num2"));
 
-          // Generate response
-          builder.append("HTTP/1.1 200 OK\n");
-          builder.append("Content-Type: text/html; charset=utf-8\n");
-          builder.append("\n");
-          builder.append("Result is: " + result);
+              // do math
+              Integer result = num1 * num2;
 
-          // TODO: Include error handling here with a correct error code and
-          // a response that makes sense
+              // Generate response
+              builder.append("HTTP/1.1 200 OK\n");
+              builder.append("Content-Type: text/html; charset=utf-8\n");
+              builder.append("\n");
+              builder.append("Result is: " + result);
+          } catch (NumberFormatException e) {
+              // Handle the case where the inputs are not valid integers
+              builder.append("HTTP/1.1 400 Bad Request\n");
+              builder.append("Content-Type: text/html; charset=utf-8\n");
+              builder.append("\n");
+              builder.append("Invalid input. Please provide valid integers for 'num1' and 'num2'.");
+          }
+}
 
         } else if (request.contains("github?")) {
-          // pulls the query from the request and runs it with GitHub's REST API
-          // check out https://docs.github.com/rest/reference/
-          //
-          // HINT: REST is organized by nesting topics. Figure out the biggest one first,
-          //     then drill down to what you care about
-          // "Owner's repo is named RepoName. Example: find RepoName's contributors" translates to
-          //     "/repos/OWNERNAME/REPONAME/contributors"
+    Map<String, String> query_pairs = new LinkedHashMap<String, String>();
+    query_pairs = splitQuery(request.replace("github?", ""));
+    String apiUrl = "https://api.github.com/" + query_pairs.get("query");
 
-          Map<String, String> query_pairs = new LinkedHashMap<String, String>();
-          query_pairs = splitQuery(request.replace("github?", ""));
-          String json = fetchURL("https://api.github.com/" + query_pairs.get("query"));
-          System.out.println(json);
+    try {
+        // Fetch data from the GitHub API
+        String json = fetchURL(apiUrl);
 
-          builder.append("HTTP/1.1 200 OK\n");
-          builder.append("Content-Type: text/html; charset=utf-8\n");
-          builder.append("\n");
-          builder.append("Check the todos mentioned in the Java source file");
-          // TODO: Parse the JSON returned by your fetch and create an appropriate
-          // response based on what the assignment document asks for
+        // Parse the JSON response
+        JSONArray reposArray = new JSONArray(json);
+        StringBuilder response = new StringBuilder();
 
+        // Extract required data from each repository
+        for (int i = 0; i < reposArray.length(); i++) {
+            JSONObject repoObject = reposArray.getJSONObject(i);
+
+            // Extract necessary fields
+            String fullName = repoObject.getString("full_name");
+            int repoId = repoObject.getInt("id");
+            String ownerLogin = repoObject.getJSONObject("owner").getString("login");
+
+            // Append the extracted data to the response
+            response.append("Full Name: ").append(fullName).append("<br>");
+            response.append("Repo ID: ").append(repoId).append("<br>");
+            response.append("Owner Login: ").append(ownerLogin).append("<br><br>");
+        }
+
+        // Generate the response
+        builder.append("HTTP/1.1 200 OK\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append(response.toString());
+    } catch (IOException e) {
+        // Handle IO errors when fetching data
+        builder.append("HTTP/1.1 500 Internal Server Error\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Error fetching data from GitHub API.");
+    } catch (JSONException e) {
+        // Handle errors when parsing JSON
+        builder.append("HTTP/1.1 500 Internal Server Error\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Error parsing JSON response from GitHub API.");
+    }
+}
+// A Request that reverses the characters in a given string
+    } else if (request.contains("reverse?")) {
+    Map<String, String> queryPairs = splitQuery(request.replace("reverse?", ""));
+    String text = queryPairs.get("text");
+
+    try {
+        // Perform string reversal
+        String reversedText = new StringBuilder(text).reverse().toString();
+
+        // Generate the response
+        builder.append("HTTP/1.1 200 OK\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Original Text: ").append(text).append("<br>");
+        builder.append("Reversed Text: ").append(reversedText);
+    } catch (NullPointerException e) {
+        // Handle null input error
+        builder.append("HTTP/1.1 400 Bad Request\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Error: No text provided.");
+    }
+
+    // A Request that returns the number of characters in a given string
+} else if (request.contains("count?")) {
+    Map<String, String> queryPairs = splitQuery(request.replace("count?", ""));
+    String text = queryPairs.get("text");
+
+    try {
+        // Perform character count
+        int count = text.length();
+
+        // Generate the response
+        builder.append("HTTP/1.1 200 OK\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Text: ").append(text).append("<br>");
+        builder.append("Character Count: ").append(count);
+    } catch (NullPointerException e) {
+        // Handle null input error
+        builder.append("HTTP/1.1 400 Bad Request\n");
+        builder.append("Content-Type: text/html; charset=utf-8\n");
+        builder.append("\n");
+        builder.append("Error: No text provided.");
+    }
+}
         } else {
           // if the request is not recognized at all
 
