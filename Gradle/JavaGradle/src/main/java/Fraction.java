@@ -37,11 +37,14 @@ public class Fraction {
       return numerator;
    }
 
-   public static void main (String args[], int num, int den) {
+   public static void main (String args[]) {
       try {
          // create a new instance
          // Fraction *frac = [[Fraction alloc] init];
          Fraction frac = new Fraction();
+
+         int num = Integer.parseInt(args[0]);
+         int den = Integer.parseInt(args[1]);
 
          // set the values
          frac.setNumerator(num);
